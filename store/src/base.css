@@ -1,0 +1,17 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  width: 1280px; height: 800px; overflow: hidden;
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  background: linear-gradient(160deg, #eef3ff 0%, #f8faff 60%, #ffffff 100%);
+  color: #1f2328;
+  display: flex; align-items: center; gap: 64px; padding: 0 96px;
+}
+.copy { flex: 1; }
+.brand { display: flex; align-items: center; gap: 14px; font-size: 22px; font-weight: 650; color: #2563eb; }
+.brand img { width: 44px; height: 44px; }
+h1 { font-size: 54px; line-height: 1.08; margin: 28px 0 18px; letter-spacing: -0.02em; }
+.sub { font-size: 23px; line-height: 1.45; color: #57606a; margin: 0; }
+.card {
+  background: #fff; border-radius: 18px; box-shadow: 0 20px 60px rgba(31, 35, 40, .14), 0 2px 6px rgba(31, 35, 40, .06);
+}

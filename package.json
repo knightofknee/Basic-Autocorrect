@@ -1,0 +1,16 @@
+{
+  "name": "basic-autocorrect",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Autocorrect for your browser. Works locally; your keystrokes never leave your browser.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:browser": "node scripts/test-browser.mjs",
+    "package": "sh scripts/package.sh",
+    "test:docs": "node scripts/test-docs.mjs",
+    "build:data": "node scripts/build-data.mjs",
+    "test:firefox": "node scripts/test-firefox.mjs",
+    "test:chrome": "node scripts/test-chrome.mjs"
+  }
+}

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Basic Autocorrect test page</title>
+  <style>
+    body { font: 15px/1.5 system-ui, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 16px; }
+    input, textarea, [contenteditable] { display: block; width: 100%; box-sizing: border-box; margin: 4px 0 16px; padding: 8px; font: inherit; border: 1px solid #999; border-radius: 6px; }
+    [contenteditable] { min-height: 3em; }
+    #results { white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 13px; }
+    .fail { color: #b00; } .pass { color: #070; }
+  </style>
+</head>
+<body>
+  <h1>Basic Autocorrect test page</h1>
+  <p>Type <code>dont</code> then Space in any field. This page loads the real content scripts with an in-memory storage shim.
+     <button id="run">Run automated tests</button></p>
+
+  <label>input type=text <input id="input" type="text"></label>
+  <label>textarea <textarea id="textarea" rows="3"></textarea></label>
+  <label>contenteditable <div id="ce" contenteditable="true"></div></label>
+  <label>contenteditable with paragraphs <div id="ce2" contenteditable="true"><p>first line</p><p><br></p></div></label>
+  <label>input type=password (must never correct) <input id="password" type="password"></label>
+  <label>input type=email (must never correct) <input id="email" type="email"></label>
+  <label>code editor class (must never correct) <div class="cm-editor"><div id="code" contenteditable="true"></div></div></label>
+
+  <pre id="results"></pre>
+
+  <script>
+    // Load scripts uncached so edits are always picked up.
+    const files = ['shim.js', '../../src/engine/data.js', '../../src/engine/data-common.js', '../../src/engine/engine.js',
+      '../../src/spell/bloom.js', '../../src/spell/spell.js', '../../src/shared/settings.js',
+      '../../src/content/fields.js', '../../src/content/gdocs.js', '../../src/content/content.js', 'runner.js'];
+    (async () => {
+      for (const f of files) {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = f + '?v=' + Date.now();
+          s.onload = resolve; s.onerror = reject;
+          document.body.appendChild(s);
+        });
+      }
+      window.testPageReady = true;
+      if (location.search.includes('autorun')) window.runTests();
+    })();
+  </script>
+</body>
+</html>

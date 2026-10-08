@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Basic Autocorrect</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img src="../../icons/icon-32.png" alt="" width="20" height="20">
+      <h1>Basic Autocorrect</h1>
+    </div>
+    <label class="switch" title="Turn autocorrect on or off">
+      <input type="checkbox" id="enabled">
+      <span class="track"><span class="thumb"></span></span>
+      <span class="sr">Autocorrect</span>
+    </label>
+  </header>
+
+  <p class="site" id="site" hidden>
+    <span id="site-status"></span>
+    <button type="button" class="link" id="site-toggle"></button>
+  </p>
+
+  <div class="mode" role="radiogroup" aria-label="How much to correct">
+    <label><input type="radio" name="mode" value="basic"><span>Basic</span></label>
+    <label><input type="radio" name="mode" value="aggressive"><span>Aggressive</span></label>
+  </div>
+  <p class="hint" id="mode-hint"></p>
+
+  <section>
+    <h2>My corrections</h2>
+    <form id="custom-form" class="row" autocomplete="off">
+      <input id="custom-from" placeholder="When I type" aria-label="When I type" spellcheck="false" required>
+      <span class="arrow" aria-hidden="true">&rarr;</span>
+      <input id="custom-to" placeholder="Replace with" aria-label="Replace with" spellcheck="false" required>
+      <button type="submit" class="add" aria-label="Add correction">Add</button>
+    </form>
+    <p class="error" id="custom-error" hidden></p>
+    <ul class="list" id="custom-list"></ul>
+  </section>
+
+  <section>
+    <h2>Never correct</h2>
+    <form id="allow-form" class="row" autocomplete="off">
+      <input id="allow-word" placeholder="Word to leave alone" aria-label="Word to leave alone" spellcheck="false" required>
+      <button type="submit" class="add" aria-label="Add word">Add</button>
+    </form>
+    <ul class="chips" id="allow-list"></ul>
+  </section>
+
+  <section id="recent-section" hidden>
+    <h2>Recent corrections</h2>
+    <ul class="list" id="recent-list"></ul>
+  </section>
+
+  <details class="more">
+    <summary>More settings</summary>
+    <label class="check"><input type="checkbox" id="builtins"> Use the built-in correction list (<span id="builtin-count"></span> common typos)</label>
+    <label class="check"><input type="checkbox" id="curly"> Use curly apostrophes (don&rsquo;t instead of don't)</label>
+    <div class="buttons">
+      <button type="button" id="export">Export my lists</button>
+      <button type="button" id="import">Import&hellip;</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </div>
+    <p class="error" id="import-status" hidden></p>
+  </details>
+
+  <footer>Your keystrokes never leave your browser.</footer>
+
+  <script src="../engine/data.js"></script>
+  <script src="../engine/data-common.js"></script>
+  <script src="../engine/engine.js"></script>
+  <script src="../shared/settings.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
