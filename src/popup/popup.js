@@ -28,7 +28,7 @@
     $('builtins').checked = s.builtins;
     for (const radio of document.querySelectorAll('input[name="mode"]')) radio.checked = radio.value === (s.aggressive ? 'aggressive' : 'basic');
     $('mode-hint').textContent = s.aggressive
-      ? 'Also fixes other misspelled words when the intended word is clear (wrok \u2192 work).'
+      ? 'Also fixes finger slips when the intended word is clear (porgram \u2192 program). Leaves anything unsure alone.'
       : 'Fixes common typos and contractions (dont \u2192 don\u2019t, teh \u2192 the).';
     $('curly').checked = s.apostrophe === 'curly';
     $('builtin-count').textContent = (Object.keys(NS.builtinCorrections).length +

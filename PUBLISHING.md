@@ -5,10 +5,10 @@ The same zip goes to both stores. All listing text, reviewer notes and permissio
 ## 0. Before you start
 
 **Put the website pages live.** Both stores link to the privacy policy, and Chrome checks it.
-The pages are in the Waldgrave site repo (`the-waldgave2/pages/basicautocorrect/`: `index.js`, `privacy.js`, `terms.js`). Commit and deploy only those files:
+The pages are in the Waldgrave site repo (`the-waldgrave/pages/basicautocorrect/`: `index.js`, `privacy.js`, `terms.js`). Commit and deploy only those files:
 
 ```bash
-cd ~/Documents/GitHub/the-waldgave2
+cd ~/Documents/GitHub/the-waldgrave
 ```
 
 ```bash
@@ -89,7 +89,7 @@ Listing URL afterwards: shown on the item's dashboard (`https://chromewebstore.g
 
 ## 3. After both are live
 
-Update `the-waldgave2/pages/basicautocorrect/index.js`: replace "Coming soon to Firefox and Chrome" with links to the two listing URLs, then deploy the site the same way as in step 0.
+Update `the-waldgrave/pages/basicautocorrect/index.js`: replace "Coming soon to Firefox and Chrome" with links to the two listing URLs, then deploy the site the same way as in step 0.
 
 ## Releasing an update
 

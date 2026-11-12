@@ -8,7 +8,7 @@ Type `dont` and press Space, and it becomes `don't `. Phone-style autocorrect fo
 - `dont` → `don't`, `cant` → `can't`, `im` → `I'm`, `ive` → `I've`, `i` → `I`
 - `teh` → `the`, `recieve` → `receive`, `definately` → `definitely`, `alot` → `a lot`
 - **Basic** (default): every common contraction plus about 4,300 high-confidence misspellings. Ambiguous words (`its`, `ill`, `were`, `well`, `wed`, …) are never touched.
-- **Aggressive** (opt-in): also fixes misspellings that aren't on any list (`keybaord` → `keyboard`, `porgram` → `program`), using a 340k-word dictionary. It only corrects when one intended word clearly wins, and leaves names, slang and unknown-but-real words alone.
+- **Aggressive** (opt-in): also fixes finger slips that aren't on any list (`porgram` → `program`, `thnig` → `thing`, `swiming` → `swimming`): one swapped, doubled, missed or neighbouring-key letter. It's tuned to help only. It never touches any of ~650k known words, names, slang or their plurals; it corrects only when no other word is about as likely; and it never produces a vulgar word. Measured with `scripts/eval-corrections.mjs`: 0.02% of fixes pick the wrong word on simulated finger slips, ~1% on hard real-world misspellings.
 - Your own corrections (`myemail` → `me@example.com`) and a "never correct" list.
 - Capitalization carries over (`Dont` → `Don't`, `DONT` → `DON'T`). Unusual casing like `tEh` or `iPhone` is left alone.
 - Cmd/Ctrl-Z right after a correction restores what you typed, and that word won't be corrected again in that field.
@@ -37,7 +37,7 @@ Then type `dont ` in any text field.
 | `contenteditable` editors | ✅ Tested on plain contenteditable in Firefox and Chrome (automated, real keys, undo) |
 | Google Docs | ✅ Tested in Firefox (automated end-to-end, real keys, 16 checks). The approach was also verified by hand in Chrome. |
 | Gmail, Slack, Notion, Reddit, other rich editors | Not yet verified. Most are contenteditable and should work, but some editors handle input their own way. |
-| Password, email, URL, number fields; code editors (CodeMirror, Monaco, Ace) | Never corrected, on purpose |
+| Password, email, URL, number fields; usernames, codes, name fields; fields with `spellcheck="false"` or `autocorrect="off"`; code editors (CodeMirror, Monaco, Ace) | Never corrected, on purpose |
 
 **Google Docs.** This is the main target: the extension fills in what Docs' own autocorrect leaves out. Docs fixes some typos itself (`dont`), but it skips real-word contractions like `cant` and `wont`, most misspellings (`teh`), your own text shortcuts, and anything like aggressive correction.
 
@@ -45,6 +45,7 @@ Then type `dont ` in any text field.
 - After Home, Cmd/Ctrl+← or a click, the next word is corrected normally. After other arrow keys, a selection, paste or dictation, the extension waits for the next space before correcting again, so it never touches text it hasn't seen.
 - **One** Cmd/Ctrl-Z right after a correction restores exactly what you typed, even for words Docs' own autocorrect would change again. That word then isn't corrected again in that document until you reload it.
 - Docs then applies its own smart quotes and sentence capitals, so `cant` becomes "can’t".
+- In Docs, punctuation finishes a word right away (Docs runs its own autocorrect on punctuation, and the extension has to act first). Elsewhere a word is checked only when the space or Enter after it is typed, so file names and web addresses like `teh.txt` or `dont.com` are left alone.
 
 ## Privacy
 
@@ -94,7 +95,9 @@ npm run test:browser
 
 `npm run test:docs` runs the end-to-end Google Docs suite in real Firefox, using the real extension and real keys, and checks the document's saved text. It needs a one-time setup described at the top of `scripts/test-docs.mjs`: sign in to a dev Firefox profile, and point it at a scratch doc.
 
-`node scripts/build-data.mjs` regenerates the word data from its public sources (see NOTICE.md).
+`node scripts/build-data.mjs` regenerates the word data from its public sources (see NOTICE.md). Hand-maintained lists live in `scripts/data/`: `not-typos.txt` (real words a misspellings list wrongly flags), `extra-known.txt` (slang and tech words) and `never-suggest.txt` (words aggressive mode never produces).
+
+`node scripts/eval-corrections.mjs` measures whether corrections ever make typing worse. It checks ~700k real words and names (none may be changed), ~4,000 real misspellings, and ~126,000 simulated finger slips (each must be fixed to the intended word or left alone). Run it after any change to the lists or the speller.
 
 The word-list test checks every built-in typo against the system dictionary (`/usr/share/dict/words`) so a real word can't slip in as a "typo".
 

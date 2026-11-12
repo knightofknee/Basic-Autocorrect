@@ -48,7 +48,7 @@
 
     let frameWin = null;
     let buf = '';
-    let known = true; // do we know where the current word started?
+    let known = false; // do we know where the current word started?
     let lastFix = null; // the correction just made: { from, to, boundary }
     let allSelected = false; // Cmd/Ctrl-A was the last key
     let pendingFix = null;
@@ -111,13 +111,14 @@
     function revert(fix) {
       const el = target();
       if (!el) return false;
-      const step = fix.boundary.length;
+      const tail = fix.boundary + (fix.after || ''); // what was typed after the word
+      const step = tail.length;
       for (let i = 0; i < step; i++) sendKey(el, 'keydown', 'ArrowLeft', 37), sendKey(el, 'keyup', 'ArrowLeft', 37);
       backspace(el, fix.to.length);
       typeText(el, fix.from);
       for (let i = 0; i < step; i++) sendKey(el, 'keydown', 'ArrowRight', 39), sendKey(el, 'keyup', 'ArrowRight', 39);
-      if (fix.boundary === '\n') reset(true);
-      else buf = buf.slice(0, buf.length - fix.to.length - step) + fix.from + fix.boundary;
+      if (tail.includes('\n')) reset(true);
+      else buf = buf.slice(0, buf.length - fix.to.length - step) + fix.from + tail;
       return true;
     }
 
@@ -147,7 +148,11 @@
       lastFix = null;
       const wasAllSelected = allSelected;
       allSelected = false;
-      ctx.trackUndo(e);
+      // "teh," is fixed when the comma is typed; people often notice only
+      // after the space. Keep one-press undo available across that space.
+      const graceSpace = !!fix && !fix.after && key === ' ' && !e.metaKey && !e.ctrlKey && !e.altKey &&
+        fix.boundary !== ' ' && fix.boundary !== '\n';
+      if (!graceSpace) ctx.trackUndo(e);
       if (!ctx.isActive()) return;
       if (isUndo && fix && revert(fix)) {
         e.preventDefault();
@@ -164,7 +169,9 @@
       // Deleting or typing over everything: the document now starts here.
       if (wasAllSelected && (key === 'Backspace' || key === 'Delete')) return reset(true);
       if (wasAllSelected && key.length === 1) reset(true);
-      if (key === 'Tab') return reset(true);
+      // Tab indents or accepts a Smart Compose suggestion: the caret may be
+      // right after a word, so the next word isn't known to start here.
+      if (key === 'Tab') return reset(false);
       if (key === 'Backspace') {
         if (e.altKey || !buf) reset(false);
         else buf = buf.slice(0, -1);
@@ -173,15 +180,18 @@
       const ch = key === 'Enter' ? '\n' : key; // Enter finishes a word like Space
       if (ch.length !== 1) return reset(false); // Delete, Escape, F-keys, ...
 
-      if (NS.engine.isBoundary(ch)) {
+      // Punctuation finishes the word right away here: Docs runs its own
+      // autocorrect on punctuation, so we must act before it does.
+      if (NS.engine.isBoundary(ch, { punctuationEnds: true })) {
         field.el = frameWin.document;
         pendingFix = null;
-        if (ctx.correct(field, (field.textBefore() + ch).slice(-MAX())) && pendingFix) {
+        if (ctx.correct(field, (field.textBefore() + ch).slice(-MAX()), { punctuationEnds: true }) && pendingFix) {
           lastFix = { ...pendingFix, boundary: ch };
         }
       }
       if (ch === '\n') return reset(true); // new paragraph: a word starts here
       buf = (buf + ch).slice(-MAX());
+      if (graceSpace) lastFix = { ...fix, after: ' ' };
     }
 
     function attach() {
@@ -189,7 +199,7 @@
       const win = iframe && iframe.contentWindow;
       if (!win || win === frameWin) return;
       frameWin = win;
-      reset(true);
+      reset(false); // the caret could be anywhere
       win.addEventListener('keydown', onKeyDown, true);
       // Docs cancels normal key presses, so these only fire when text arrives
       // some other way (IME, dictation, autofill, paste): we can no longer
@@ -199,8 +209,9 @@
       }
     }
 
-    // Clicking moves the caret somewhere we can't see; assume a word start.
-    window.document.addEventListener('mousedown', () => reset(true), true);
+    // A click can put the caret anywhere, even inside a word. Don't guess:
+    // leave the next word alone; correcting resumes after the next space.
+    window.document.addEventListener('mousedown', () => reset(false), true);
     attach();
     // Docs can recreate its typing iframe; pick up a new one as soon as it
     // takes focus (and poll as a fallback).

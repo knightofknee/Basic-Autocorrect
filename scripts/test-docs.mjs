@@ -128,13 +128,16 @@ try {
   await check('contractions and typos', ['cant wont dont im teh wierd commerical, i think so. '],
     "can't won't don't I'm the weird commercial, I think so.");
   await check('punctuation', ['so (teh) cant! dont? ok. '], "so (the) can't! don't? ok.");
-  await check('capitalization', ['Cant DONT Teh '], "Can't DON'T The", { exactCase: true });
+  await check('capitalization', ['Cant DONT Wierd '], "Can't DON'T Weird", { exactCase: true });
   await check('first word after select-all + delete', ['cant go '], "can't go");
   // Each undo check uses its own word: an undone word isn't corrected again in that document.
   await check('one Cmd-Z restores the typed word', ['so cant ', 'UNDO', 'go'], 'so cant go');
   await check('one Cmd-Z restores a word Docs would fix too', ['so dont ', 'UNDO', 'go'], 'so dont go');
   await check('undone word stays as typed', ['so wont ', 'UNDO', 'wont '], 'so wont wont');
-  await check('undo after punctuation', ['ok teh,', 'UNDO', ' go'], 'ok teh, go');
+  await check('undo after punctuation, before the space', ['ok wierd,', 'UNDO', ' go'], 'ok wierd, go');
+  await check('undo after punctuation and the space', ['ok teh, ', 'UNDO', 'go'], 'ok teh, go');
+  // Docs autocorrects on punctuation itself; we must act first or lengths drift ("Ddon't").
+  await check('no drift with Docs autocorrect on punctuation', ['ok. isnt? youre! theyre, recieve. '], "ok. isn't? you're! they're, receive.");
   await setSettings({}); // fresh page: words undone above stay uncorrected for the rest of a session
   await check('Home is a word start', ['world', 'HOME', 'teh '], 'the world');
   await check('Enter finishes a word', ['dont\nteh\nok '], "don't\nthe\nok");
@@ -142,7 +145,8 @@ try {
   await check('basic mode leaves unknown typos', ['my keybaord '], 'my keybaord');
 
   await setSettings({ aggressive: true });
-  await check('aggressive fixes other typos', ['my keybaord porgram langauge '], 'my keyboard program language');
+  await check('aggressive fixes other typos', ['my porgram wrok thnig '], 'my program work thing');
+  await check('aggressive leaves slang alone', ['the noobs and newbs said bruh '], 'the noobs and newbs said bruh');
   await check('aggressive leaves real words and names', ['the quixotic Brian googled '], 'the quixotic Brian googled');
 
   await setSettings({ custom: { brianemail: 'brian@example.com' }, allowed: ['teh'] });

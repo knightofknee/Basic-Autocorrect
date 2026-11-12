@@ -1,6 +1,6 @@
 {
   "name": "basic-autocorrect",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Autocorrect for your browser. Works locally; your keystrokes never leave your browser.",
   "license": "MIT",

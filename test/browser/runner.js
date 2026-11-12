@@ -71,12 +71,12 @@
     for (const [kind, el] of Object.entries(fields)) {
       await check(`${kind}: dont<space>`, async () => { reset(el); await type(el, 'dont '); eq(read(el), "don't "); });
       await check(`${kind}: sentence`, async () => {
-        reset(el); await type(el, 'im sure teh cat isnt wierd.'); eq(read(el), "I'm sure the cat isn't weird.");
+        reset(el); await type(el, 'im sure teh cat isnt wierd. '); eq(read(el), "I'm sure the cat isn't weird. ");
       });
       await check(`${kind}: fast typing`, async () => {
         reset(el); await type(el, 'dont im sure teh cat ', { fast: true }); eq(read(el), "don't I'm sure the cat ");
       });
-      await check(`${kind}: capitalization`, async () => { reset(el); await type(el, 'Dont DONT Teh '); eq(read(el), "Don't DON'T The "); });
+      await check(`${kind}: capitalization`, async () => { reset(el); await type(el, 'Dont DONT Wierd '); eq(read(el), "Don't DON'T Weird "); });
       await check(`${kind}: punctuation kept`, async () => { reset(el); await type(el, '(dont) teh, '); eq(read(el), "(don't) the, "); });
       await check(`${kind}: no correction mid-word`, async () => { reset(el); await type(el, 'tehran dontx '); eq(read(el), 'tehran dontx '); });
       await check(`${kind}: undo restores typed word`, async () => {
@@ -116,7 +116,7 @@
       eq(el.querySelectorAll('p')[0].textContent, 'first');
     });
 
-    for (const id of ['password', 'email', 'code']) {
+    for (const id of ['password', 'email', 'code', 'username', 'nospell', 'fullname']) {
       await check(`${id}: never corrected`, async () => {
         const el = $(id); reset(el); await type(el, 'dont x'); eq(read(el), 'dont x');
       });

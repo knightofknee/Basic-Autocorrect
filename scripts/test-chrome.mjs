@@ -87,7 +87,9 @@ try {
   await check('textarea', 'teh\nend', 'the\nend');
 
   await setSettings({ aggressive: true });
-  await check('input', 'my keybaord porgram ', 'my keyboard program ');
+  await check('input', 'my porgram wrok ', 'my program work ');
+  await check('input', 'the noobs said ', 'the noobs said '); // never "boobs"
+
 
   // A page must not be able to fetch the extension's files by their fixed URL.
   const probe = await evaluate(`fetch('chrome-extension://${id}/src/spell/words.txt').then(() => 'reachable', () => 'blocked')`);

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B82F6"/><stop offset="1" stop-color="#1D4ED8"/></linearGradient></defs>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#g)"/>
+  <!-- a big apostrophe: round head, curved tail (the character autocorrect adds to "dont") -->
+  <circle cx="64" cy="46" r="21" fill="#fff"/>
+  <path d="M80 50 C 80 76, 68 92, 48 100 L 44 92 C 56 84, 62 74, 62 62 Z" fill="#fff"/>
+  <!-- green spark: just fixed -->
+  <path d="M98 22 L102 32 L112 36 L102 40 L98 50 L94 40 L84 36 L94 32 Z" fill="#86EFAC"/>
+</svg>

@@ -110,8 +110,8 @@
   // already in the field; with `keyPending` it hasn't been inserted yet (Enter
   // in inputs and rich editors, where the word must be fixed before the key
   // acts), so only the word itself is replaced.
-  function correct(field, textBefore, { keyPending = false } = {}) {
-    const result = state.corrector.check(textBefore);
+  function correct(field, textBefore, { keyPending = false, punctuationEnds = false } = {}) {
+    const result = state.corrector.check(textBefore, { punctuationEnds });
     if (!result) return false;
     const rejected = state.rejected.get(field.el);
     if (rejected && rejected.has(engine.normalizeKey(result.from))) return false;
@@ -120,7 +120,7 @@
     let ok = false;
     try {
       ok = keyPending
-        ? field.replaceBeforeCaret(textBefore.length - 1 - result.start, result.to)
+        ? field.replaceBeforeCaret(textBefore.length - 1 - result.start, result.insert.slice(0, -1))
         : field.replaceBeforeCaret(textBefore.length - result.start, result.insert);
     } finally {
       state.applying = false;

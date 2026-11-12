@@ -106,7 +106,6 @@
     April: april
     June: june
     July: july
-    August: august
     September: september septmber
     October: october
     November: november

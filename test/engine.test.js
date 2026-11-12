@@ -67,7 +67,7 @@ test('common misspellings', () => {
   assert.equal(type('definately '), 'definitely ');
   assert.equal(type('seperate '), 'separate ');
   assert.equal(type('alot '), 'a lot ');
-  assert.equal(type('i think teh cat is wierd.'), 'I think the cat is weird.');
+  assert.equal(type('i think teh cat is wierd. '), 'I think the cat is weird. ');
 });
 
 test('only corrects when the word is finished', () => {
@@ -92,18 +92,30 @@ test('odd casing is treated as deliberate', () => {
   assert.equal(type('IM '), 'IM '); // instant message, not "I'M"
 });
 
-test('punctuation finishes a word and is kept', () => {
-  assert.equal(type('dont.'), "don't.");
-  assert.equal(type('dont,'), "don't,");
-  assert.equal(type('dont!'), "don't!");
-  assert.equal(type('dont?'), "don't?");
-  assert.equal(type('dont;'), "don't;");
-  assert.equal(type('dont:'), "don't:");
-  assert.equal(type('(dont)'), "(don't)");
+test('punctuation is kept; the word is fixed once it really ends', () => {
+  assert.equal(type('dont. '), "don't. ");
+  assert.equal(type('dont, '), "don't, ");
+  assert.equal(type('dont! '), "don't! ");
+  assert.equal(type('dont? '), "don't? ");
+  assert.equal(type('dont?! '), "don't?! ");
+  assert.equal(type('dont; '), "don't; ");
+  assert.equal(type('dont: '), "don't: ");
+  assert.equal(type('dont...\n'), "don't...\n");
+  assert.equal(type('(dont)'), "(don't)"); // closing bracket ends the word
+  assert.equal(type('(teh). '), '(the). ');
   assert.equal(type('"teh"'), '"the"');
   assert.equal(type("'teh "), "'the ");
   assert.equal(type('teh\n'), 'the\n');
   assert.equal(type('teh\u00A0'), 'the\u00A0');
+  // Not yet: the period might be part of a file name or web address.
+  assert.equal(type('dont.'), 'dont.');
+});
+
+test('file names, web addresses and code are never touched', () => {
+  for (const text of ['teh.txt ', 'dont.com ', 'cant.js ', 'notes/teh ', 'teh_file ', 'teh-file ', 'teh.md, ',
+    '(see teh.txt) ', 'C:\\teh ', '#teh ', '@teh ', 'teh@example.com ', 'v1.teh ', 'e.g. ', 'i.e. ', 'a.m. ']) {
+    assert.equal(type(text), text, text);
+  }
 });
 
 test('URLs, emails, paths and abbreviations are left alone', () => {
@@ -127,7 +139,7 @@ test('custom corrections', () => {
   assert.equal(type('brianemail ', { custom }), 'brian@example.com ');
   assert.equal(type('Brianemail ', { custom }), 'brian@example.com '); // exact, not re-cased
   assert.equal(type('Adress ', { custom }), 'Address ');
-  assert.equal(type('omw.', { custom }), 'on my way.');
+  assert.equal(type('omw. ', { custom }), 'on my way. ');
   assert.equal(type('teh ', { custom }), 'tea '); // overrides built-in
   assert.equal(type('x@ ', { custom: { 'x@': 'hi' } }), 'hi ');
 });
@@ -175,4 +187,29 @@ test('aggressive mode uses the speller for unknown words only', () => {
   } finally {
     NS.spell = saved;
   }
+});
+
+test('typos that are also names are left alone when capitalized mid-sentence', () => {
+  assert.equal(type('i love Grammer on tv '), 'I love Grammer on tv '); // Kelsey Grammer
+  assert.equal(type('ask Noone today '), 'ask Noone today ');
+  assert.equal(type('my grammer is bad '), 'my grammar is bad '); // lowercase: a typo
+  assert.equal(type('Grammer is hard. '), 'Grammar is hard. '); // sentence start: a typo
+  assert.equal(type('Im here '), "I'm here ");
+});
+
+test('real words are never corrected', () => {
+  const fs = require('node:fs');
+  const notTypos = fs.readFileSync(require('node:path').join(__dirname, '../scripts/data/not-typos.txt'), 'utf8')
+    .split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+  for (const w of [...notTypos, 'august', 'its', 'ill', 'were', 'well', 'hell', 'shell', 'wed', 'shed', 'lets', 'may']) {
+    assert.equal(type(w + ' '), w + ' ', w);
+  }
+});
+
+test('Google Docs mode: punctuation finishes the word immediately', () => {
+  const c = engine.createCorrector();
+  assert.deepEqual(c.check('so dont?', { punctuationEnds: true }), { start: 3, from: 'dont', to: "don't", insert: "don't?" });
+  assert.equal(c.check("so don't? ", { punctuationEnds: true }), null); // already handled
+  assert.deepEqual(c.check('(teh)', { punctuationEnds: true }), { start: 1, from: 'teh', to: 'the', insert: 'the)' });
+  assert.equal(c.check('so dont?'), null); // elsewhere: wait for the space
 });

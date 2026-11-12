@@ -33,3 +33,8 @@ https://github.com/hermitdave/FrequencyWords (OpenSubtitles 2018, en_50k) by
 Hermit Dave, licensed under
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 The derived file is distributed under the same license.
+
+## NameDatabases
+First names in `src/spell/known.bin` (so aggressive mode never changes them)
+come from https://github.com/smashew/NameDatabases, released into the public
+domain (Unlicense).

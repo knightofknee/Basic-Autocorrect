@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B82F6"/><stop offset="1" stop-color="#1D4ED8"/></linearGradient></defs>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#g)"/>
+  <!-- "Aa" with the apostrophe highlighted: a word that just got fixed -->
+  <text x="20" y="90" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="800" font-size="74" fill="#fff">Aa</text>
+  <path d="M100 26 C 110 26, 112 36, 108 46 L 101 58 L 96 56 L 101 44 C 95 43, 92 39, 92 34 C 92 29, 95 26, 100 26 Z" fill="#86EFAC"/>
+</svg>

@@ -10,7 +10,7 @@ SRC="dist/basic-autocorrect-$VERSION-source.zip"
 mkdir -p dist
 rm -f "$OUT" "$SRC"
 zip -qr "$OUT" manifest.json icons/*.png src LICENSE NOTICE.md -x '*.DS_Store'
-zip -qr "$SRC" manifest.json icons src scripts test store package.json README.md PUBLISHING.md LICENSE NOTICE.md \
+zip -qr "$SRC" manifest.json icons src scripts test store docs package.json README.md PUBLISHING.md LICENSE NOTICE.md \
   -x '*.DS_Store' 'store/*.png'
 echo "$OUT"
 echo "$SRC"

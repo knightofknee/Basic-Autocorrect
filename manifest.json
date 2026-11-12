@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Basic Autocorrect",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Autocorrect for your browser. Fixes obvious typos as you type. Works locally: your keystrokes never leave your browser.",
   "icons": {
     "16": "icons/icon-16.png",

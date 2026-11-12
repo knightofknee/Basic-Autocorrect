@@ -9,7 +9,7 @@ Basic Autocorrect
 ## Short description
 (CWS "summary", max 132 characters; AMO "summary", max 250)
 
-Fixes obvious typos as you type, like phone autocorrect. Works in Google Docs. Your keystrokes never leave your browser.
+Autocorrect for your browser. Fixes obvious typos as you type. Works locally: your keystrokes never leave your browser.
 
 ## Full description
 
@@ -27,7 +27,7 @@ Words that could be real (its, ill, were, well) are never changed. URLs, email a
 
 TWO MODES
 • Basic (default): the high-confidence list above.
-• Aggressive: also fixes other misspellings when the intended word is clear (keybaord → keyboard). Names, slang and real words are left alone.
+• Aggressive: also fixes slips like swapped, doubled, missed or neighbouring-key letters when the intended word is clear (porgram → program, thnig → thing). It's tuned to help only: names, slang and real words are left alone, and anything ambiguous is left as you typed it.
 
 MADE FOR GOOGLE DOCS
 Fills the gaps in Docs' own autocorrect, which skips words like "cant" and "wont". Also works in regular text boxes and editors across the web.
@@ -40,6 +40,10 @@ YOU'RE IN CONTROL
 PRIVATE BY DESIGN
 Your keystrokes never leave your browser. No accounts, no servers, no analytics, no AI, no remote code. Your settings stay on your device.
 
+FREE AND OPEN SOURCE
+Every line of code is public, so you can check these promises yourself:
+https://github.com/knightofknee/Basic-Autocorrect
+
 Privacy policy: https://waldgrave.com/basicautocorrect/privacy
 
 ## Category
@@ -51,6 +55,7 @@ Privacy policy: https://waldgrave.com/basicautocorrect/privacy
 - Privacy policy: https://waldgrave.com/basicautocorrect/privacy
 - Terms: https://waldgrave.com/basicautocorrect/terms
 - Support email: bricarlis@gmail.com
+- Source code: https://github.com/knightofknee/Basic-Autocorrect
 
 ## Chrome Web Store: Privacy practices tab
 

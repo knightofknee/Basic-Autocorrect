@@ -189,15 +189,35 @@
 
   // ---- adapter selection ------------------------------------------------------
 
+  // Fields that hold identifiers, not prose. Correcting a username, password
+  // (when a "show password" button makes it plain text), code or name would
+  // break it, so these are never touched.
+  const NOT_PROSE_AUTOCOMPLETE = /\b(username|current-password|new-password|one-time-code|email|tel|url|cc-|postal-code|name|given-name|family-name|additional-name|nickname|honorific|organization|street-address|address-line)/i;
+  const NOT_PROSE_NAME = /user|login|passw|pwd|email|code|otp|token|handle|nick|zip|postal|phone/i;
+
+  function optedOut(el) {
+    // The site asked for no spellcheck/autocorrect here (usual for usernames,
+    // handles, codes, search boxes for exact terms).
+    const off = el.closest('[spellcheck="false"], [autocorrect="off"], [autocorrect="false"]');
+    return !!off;
+  }
+
+  function isProseInput(el) {
+    const type = (el.getAttribute('type') || '').toLowerCase();
+    if (!TEXT_INPUT_TYPES.has(type)) return false;
+    if (NOT_PROSE_AUTOCOMPLETE.test(el.getAttribute('autocomplete') || '')) return false;
+    if (NOT_PROSE_NAME.test(`${el.name || ''} ${el.id || ''}`)) return false;
+    return true;
+  }
+
   function adapterFor(target) {
     if (!target || target.nodeType !== 1) return null;
-    if (target.closest(CODE_EDITORS)) return null;
+    if (target.closest(CODE_EDITORS) || optedOut(target)) return null;
     if (target.tagName === 'TEXTAREA') {
       return target.readOnly || target.disabled ? null : textControlAdapter(target);
     }
     if (target.tagName === 'INPUT') {
-      const type = (target.getAttribute('type') || '').toLowerCase();
-      return TEXT_INPUT_TYPES.has(type) && !target.readOnly && !target.disabled ? textControlAdapter(target) : null;
+      return isProseInput(target) && !target.readOnly && !target.disabled ? textControlAdapter(target) : null;
     }
     if (target.isContentEditable) return contentEditableAdapter(target);
     return null;

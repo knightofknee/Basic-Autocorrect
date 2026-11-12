@@ -10,8 +10,11 @@
 (function (root) {
   const NS = (root.BasicAutocorrect = root.BasicAutocorrect || {});
 
-  // Characters that finish a word and trigger a correction.
-  const BOUNDARIES = new Set([' ', '\u00A0', '\n', '.', ',', '!', '?', ';', ':', ')', ']', '}', '"', '\u201D', '\u2026']);
+  // Characters that finish a word and trigger a check: whitespace and closers.
+  const CLOSERS = [')', ']', '}', '"', '\u201D'];
+  const BOUNDARIES = new Set([' ', '\u00A0', '\n', ...CLOSERS]);
+  // Punctuation that may sit between a word and the whitespace that ends it.
+  const TRAILING = new Set(['.', ',', '!', '?', ';', ':', '\u2026', ...CLOSERS]);
   // Characters allowed directly before a word (besides whitespace / start of text).
   const OPENERS = new Set(['(', '[', '{', '"', '\u201C', '\u2018', '\u00AB', '\u2014', '\u2013']);
   const WHITESPACE = /\s/;
@@ -21,8 +24,8 @@
   // How far back adapters need to look for the longest word we would correct.
   const MAX_CONTEXT = 64;
 
-  const isBoundary = (ch) => BOUNDARIES.has(ch);
-  const isWordStop = (ch) => WHITESPACE.test(ch) || BOUNDARIES.has(ch) || OPENERS.has(ch);
+  const isBoundary = (ch, { punctuationEnds = false } = {}) => BOUNDARIES.has(ch) || (punctuationEnds && TRAILING.has(ch));
+  const isWordStop = (ch) => WHITESPACE.test(ch) || TRAILING.has(ch) || OPENERS.has(ch);
 
   function normalizeKey(word) {
     return word.toLowerCase().replace(/\u2019/g, "'");
@@ -91,7 +94,7 @@
       return fix ? matchCase(token, fix) : null;
     }
 
-    function lookup(token, boundary, sentenceStart = false) {
+    function lookup(token, sentenceStart = false) {
       const key = normalizeKey(token);
       if (allowed.has(key)) return null;
 
@@ -104,9 +107,9 @@
       }
 
       if (!WORD.test(token)) return null;
-      // "i.e." — don't turn a lone letter followed by a period into anything.
-      if (boundary === '.' && [...token].length === 1) return null;
       const correction = builtins && builtins[key];
+      // "Grammer", "Noone" mid-sentence are probably names, not typos.
+      if (correction && !sentenceStart && casePattern(token) === 'title' && nameLike().has(key)) return null;
       const cased = correction ? matchCase(token, correction) : suggest(token, sentenceStart);
       if (cased === null || cased === token) return null;
       return withApostrophe(cased, curlyDefault || token.includes('\u2019'));
@@ -117,32 +120,58 @@
      * Returns null, or { start, from, to, insert } meaning: replace
      * textBefore.slice(start) (the word plus the typed character) with `insert`.
      */
-    function check(textBefore) {
+    /**
+     * textBefore: text before the caret, ending with the character just typed.
+     * Only whitespace (space, Enter) or a closing bracket/quote finishes a word.
+     * Punctuation such as . , ? waits for the space after it, so "teh.txt" or
+     * "dont.com" is seen whole and left alone, while "teh. " still corrects.
+     * Returns null, or { start, from, to, insert } meaning: replace
+     * textBefore.slice(start) (word, its trailing punctuation and the typed
+     * character) with `insert`.
+     */
+    // punctuationEnds: also finish a word on . , ? ! etc. Google Docs needs
+    // this: it runs its own autocorrect on punctuation, and since the
+    // extension can't read Docs' text it must act first to stay in sync.
+    function check(textBefore, { punctuationEnds = false } = {}) {
       if (!textBefore) return null;
-      const boundary = textBefore[textBefore.length - 1];
-      if (!isBoundary(boundary)) return null;
+      const trigger = textBefore[textBefore.length - 1];
+      if (!isBoundary(trigger, { punctuationEnds })) return null;
 
-      const end = textBefore.length - 1;
+      // The word ends where its trailing punctuation starts: "teh," "dont?!" "(teh)"
+      let end = WHITESPACE.test(trigger) ? textBefore.length - 1 : textBefore.length;
+      if (punctuationEnds) {
+        // Only the key just typed: earlier punctuation was already handled.
+        if (TRAILING.has(trigger) && end === textBefore.length) end--;
+      } else {
+        while (end > 0 && TRAILING.has(textBefore[end - 1])) end--;
+      }
+      // The word is everything back to the previous whitespace, minus opening
+      // brackets/quotes. Anything glued on ("example.dont", "a,teh", "teh.txt")
+      // makes it not a word, so it's left alone.
       let start = end;
-      while (start > 0 && !isWordStop(textBefore[start - 1])) start--;
-      // Ignore words glued to other text ("example.dont", "a,teh"): likely a
-      // URL, file name, number or code.
-      if (start > 0 && !WHITESPACE.test(textBefore[start - 1]) && !OPENERS.has(textBefore[start - 1])) return null;
+      while (start > 0 && !WHITESPACE.test(textBefore[start - 1])) start--;
+      while (start < end && OPENERS.has(textBefore[start])) start++;
       // A leading straight quote is punctuation, not part of the word.
       while (start < end && textBefore[start] === "'" && !custom.has(normalizeKey(textBefore.slice(start, end)))) start++;
 
       const token = textBefore.slice(start, end);
       if (!token) return null;
+      const tail = textBefore.slice(end);
+      // "i.e." / "a." — a lone letter followed by a period is an abbreviation.
+      if (tail[0] === '.' && [...token].length === 1) return null;
       let before = start - 1;
       while (before >= 0 && (WHITESPACE.test(textBefore[before]) || OPENERS.has(textBefore[before]))) before--;
       const sentenceStart = before < 0 || '.!?\n'.includes(textBefore[before]);
-      const to = lookup(token, boundary, sentenceStart);
+      const to = lookup(token, sentenceStart);
       if (to === null || to === undefined) return null;
-      return { start, from: token, to, insert: to + boundary };
+      return { start, from: token, to, insert: to + tail };
     }
 
     return { check, lookup };
   }
+
+  let nameLikeSet = null;
+  const nameLike = () => nameLikeSet || (nameLikeSet = new Set(NS.nameLikeTypos || []));
 
   // Hand-curated list first; the generated common-misspellings list fills in.
   let merged = null;

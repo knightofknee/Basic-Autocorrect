@@ -21,6 +21,8 @@ const SOURCES = {
   scowl: 'https://downloads.sourceforge.net/project/wordlist/SCOWL/2020.12.07/scowl-2020.12.07.tar.gz',
   wiki: 'https://en.wikipedia.org/w/index.php?title=Wikipedia:Lists_of_common_misspellings/For_machines&action=raw',
   freq: 'https://raw.githubusercontent.com/hermitdave/FrequencyWords/master/content/2018/en/en_50k.txt',
+  firstNames: 'https://raw.githubusercontent.com/smashew/NameDatabases/master/NamesDatabases/first%20names/us.txt',
+  lastNames: 'https://raw.githubusercontent.com/smashew/NameDatabases/master/NamesDatabases/surnames/us.txt',
 };
 
 async function download(name, file) {
@@ -35,25 +37,40 @@ await mkdir(SRC, { recursive: true });
 await download('scowl', 'scowl.tar.gz');
 await download('wiki', 'wiki-misspellings.txt');
 await download('freq', 'en_50k.txt');
+await download('firstNames', 'names-first.txt');
+await download('lastNames', 'names-last.txt');
 if (!existsSync(SRC + 'scowl-2020.12.07')) execFileSync('tar', ['xzf', 'scowl.tar.gz'], { cwd: SRC });
 
 // ---- SCOWL ------------------------------------------------------------------------
 const FINAL = SRC + 'scowl-2020.12.07/final/';
 const files = await readdir(FINAL);
 const latin1 = new TextDecoder('latin1');
+// spellings: SCOWL file prefixes to include, or 'all' (every regional and
+// variant spelling: british_z, australian, variant_1..3, ...).
 async function scowl({ maxLevel, kinds, spellings = ['english', 'american', 'british', 'canadian'] }) {
   const out = new Set();
+  // Also add each word with accents stripped: people type "cafe", "outre".
+  const plain = (w) => w.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   for (const f of files) {
     const m = f.match(/^([a-z_0-9]+)-([a-z-]+)\.(\d+)$/);
-    if (!m || !spellings.includes(m[1]) || !kinds.includes(m[2]) || Number(m[3]) > maxLevel) continue;
+    if (!m || (spellings !== 'all' && !spellings.includes(m[1])) || !kinds.includes(m[2]) || Number(m[3]) > maxLevel) continue;
     for (const w of latin1.decode(await readFile(FINAL + f)).split('\n')) {
-      if (w) out.add(w.normalize('NFC').toLowerCase());
+      if (w) {
+        out.add(w.normalize('NFC').toLowerCase());
+        out.add(plain(w).toLowerCase());
+      }
     }
   }
   return out;
 }
 const ALL_KINDS = ['words', 'upper', 'proper-names', 'contractions', 'abbreviations'];
-const known = await scowl({ maxLevel: 80, kinds: ALL_KINDS });
+// Two sets: `listKnown` (SCOWL 80, plus real-usage words below) decides which
+// list typos are real words; `known` (everything in SCOWL 95, which even
+// records some misspelling variants) is what aggressive mode never changes.
+const listKnown = await scowl({ maxLevel: 80, kinds: ALL_KINDS });
+const known = await scowl({ maxLevel: 95, kinds: ALL_KINDS, spellings: 'all' });
+// First names count as words too (people type them lowercase in chat).
+for (const w of (await readFile(SRC + 'names-first.txt', 'utf8')).split('\n')) if (w.trim()) known.add(w.trim().toLowerCase());
 const common = await scowl({ maxLevel: 60, kinds: ['words', 'contractions'], spellings: ['english', 'american'] });
 console.log(`known words: ${known.size}, common words: ${common.size}`);
 
@@ -72,8 +89,22 @@ const countOf = (w) => freq.get(w) || freq.get(w.replace(/'/g, '')) || 0;
 // inflates these fragments; keep them out of the candidates.
 const FRAGMENTS = new Set(['don', 'didn', 'doesn', 'isn', 'wasn', 'aren', 'weren', 'couldn', 'shouldn', 'wouldn',
   'hasn', 'haven', 'hadn', 'mustn', 'needn', 'ain', 'mightn', 'shan', 'll', 've', 're']);
+// Hand-curated lists (scripts/data/): real words the dictionaries miss, and
+// words aggressive mode must never produce as a "correction".
+const wordList = async (file) => (await readFile(ROOT + 'scripts/data/' + file, 'utf8'))
+  .split('\n').map((l) => l.trim().toLowerCase()).filter((l) => l && !l.startsWith('#'));
+const extraKnown = await wordList('extra-known.txt');
+const neverSuggest = new Set(await wordList('never-suggest.txt'));
+// Everything people actually type (the frequency list) counts as a real word too.
+// The hand-curated words also get their common endings (yeet -> yeeted, yeeting).
+const withEndings = (w) => [w, w + 's', w + 'es', w + 'ed', w + 'd', w + 'ing', w + 'er', w + 'ers', w + w.slice(-1) + 'ing', w + w.slice(-1) + 'ed'];
+for (const w of [...freq.keys(), ...extraKnown.flatMap(withEndings)]) {
+  known.add(w);
+  listKnown.add(w);
+}
+
 const candidates = [...common]
-  .filter((w) => /^[a-z]+(?:'[a-z]+)?$/.test(w) && countOf(w) >= 20 && !FRAGMENTS.has(w))
+  .filter((w) => /^[a-z]+(?:'[a-z]+)?$/.test(w) && countOf(w) >= 20 && !FRAGMENTS.has(w) && !neverSuggest.has(w))
   .sort((a, b) => countOf(b) - countOf(a));
 for (const w of ['a', 'i']) if (!candidates.includes(w)) candidates.push(w);
 await mkdir(ROOT + 'src/spell', { recursive: true });
@@ -98,7 +129,8 @@ console.log(`bloom: ${(bits.length / 1024).toFixed(0)} KB`);
 
 // ---- common misspellings ---------------------------------------------------------------
 const { builtinCorrections: handCurated } = require('../src/engine/data.js');
-const isKnown = (w) => known.has(w);
+const isKnown = (w) => listKnown.has(w);
+const notTypos = new Set(await wordList('not-typos.txt'));
 const wiki = {};
 let skipped = 0;
 for (const line of (await readFile(SRC + 'wiki-misspellings.txt', 'utf8')).split('\n')) {
@@ -110,6 +142,7 @@ for (const line of (await readFile(SRC + 'wiki-misspellings.txt', 'utf8')).split
     !correction.includes(',') && // several possible meanings: ambiguous
     /^[a-z']{3,}$/.test(typo) &&
     !isKnown(typo) && // a real word: never "correct" it
+    !notTypos.has(typo) &&
     !(typo in handCurated) &&
     correction.toLowerCase() !== typo &&
     correction.toLowerCase().split(/[ -]/).every(isKnown);
@@ -124,9 +157,20 @@ const header = `/*
  * typo is not a real word in SCOWL (size 80).
  */
 `;
+// Typos that are also someone's name (Grammer, Feild, Noone, Im): when typed
+// capitalized mid-sentence they're treated as names and left alone.
+const names = await scowl({ maxLevel: 95, kinds: ['proper-names', 'upper'] });
+for (const f of ['names-first.txt', 'names-last.txt']) {
+  for (const w of (await readFile(SRC + f, 'utf8')).split('\n')) if (w.trim()) names.add(w.trim().toLowerCase());
+}
+const nameLike = [...Object.keys(wiki), ...Object.keys(handCurated)].filter((t) => names.has(t)).sort();
+console.log(`name-like typos: ${nameLike.length}`);
+
 await writeFile(ROOT + 'src/engine/data-common.js', header + `(function (root) {
   const NS = (root.BasicAutocorrect = root.BasicAutocorrect || {});
   NS.commonCorrections = ${JSON.stringify(wiki, null, 0).replace(/","/g, '",\n"')};
+  // Also people's names: not corrected when capitalized mid-sentence (Grammer, Noone).
+  NS.nameLikeTypos = ${JSON.stringify(nameLike)};
   if (typeof module !== 'undefined' && module.exports) module.exports = NS;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 `);

@@ -1,0 +1,23 @@
+# Real words, or deliberate spellings, that must never be "corrected" even
+# though a misspellings list says otherwise. One per line, lowercase.
+# Reviewed by hand against SCOWL 95, the system dictionary and name lists.
+heros
+altho
+creche
+halp
+heterogenous
+millepede
+translater
+flourishment
+rebounce
+internation
+# Accepted variant spellings or plurals (SCOWL variant lists), reviewed by hand:
+liquify
+rarified
+dependance
+forbad
+funguses
+commandoes
+torpedos
+tormenters
+reenforced
